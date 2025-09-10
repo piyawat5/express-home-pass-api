@@ -1,0 +1,129 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  firstName     String?
+  lastName      String?
+  avatar        String?
+  password  String?
+  role      UserRole @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // OAuth fields
+  googleId      String?   @unique @map("google_id")
+  facebookId    String?   @unique @map("facebook_id")
+  profileImage  String?   @map("profile_image")
+  authProvider  AuthProvider? @map("auth_provider")
+
+  // Relations
+  oAuthAccount OAuthAccount?
+  userLogs UserLog[]
+  refreshTokens RefreshToken[]
+}
+
+model PendingUser {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  firstName     String?
+  lastName      String?
+  password  String
+  otp       String
+  otpExpiry DateTime
+  createdAt DateTime @default(now())
+}
+
+// TODO: เพิ่ม update ทุกๆอันด้วย
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  tokenHash String   @unique
+  userId    String
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model OAuthAccount {
+  id              Int      @id @default(autoincrement())
+  provider        String   // "google" | "facebook"
+  providerUserId  String   // id จาก provider (เช่น sub ของ Google หรือ id ของ Facebook)
+  userId          String @unique
+  accessToken     String?  // แล้วแต่จะเก็บ (ถ้าไม่ใช้ refresh ข้อมูล ก็ไม่ต้องเก็บ)
+  refreshToken    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@index([userId])
+}
+
+model UserLog {
+  id          Int         @id @default(autoincrement())
+  userId      String?
+  action      LogAction
+  description String      @db.Text
+  ipAddress   String?
+  userAgent   String?     @db.Text
+  metadata    Json?       // เก็บข้อมูลเพิ่มเติมในรูปแบบ JSON
+  createdAt   DateTime    @default(now())
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model System {
+  id        String   @id @default(cuid())
+  nameth String? 
+  nameEng String? 
+  shortName String?
+  url String?
+  bgColor String?
+  borderColor String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum LogAction {
+  LOGIN
+  LOGOUT
+  REGISTER
+  SEARCH
+}
+
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+  FACEBOOK
+}
