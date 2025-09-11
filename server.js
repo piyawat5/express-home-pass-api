@@ -12,10 +12,11 @@ import authen from "./routes/auth.route.js";
 import cookieParser from "cookie-parser";
 
 const app = express();
-app.use(
+app.options(
+  "*",
   cors({
-    origin: "http://localhost:5173", // origin ของ frontend
-    credentials: true, // ให้ส่ง cookie/header มาด้วยได้
+    origin: "http://localhost:5173",
+    credentials: true,
   })
 );
 app.use(morgan("dev"));
