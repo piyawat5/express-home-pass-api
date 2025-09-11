@@ -12,13 +12,21 @@ import authen from "./routes/auth.route.js";
 import cookieParser from "cookie-parser";
 
 const app = express();
-app.options(
-  "*",
-  cors({
-    origin: "http://localhost:5173",
-    credentials: true,
-  })
-);
+const corsOptions = {
+  origin: [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    // เพิ่ม domain ของ frontend ที่ deploy แล้วด้วย
+    // "https://your-frontend-domain.com"
+  ],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  optionsSuccessStatus: 200,
+};
+
+// ใช้ CORS middleware ก่อน routes อื่นๆ
+app.use(cors(corsOptions));
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(cookieParser());
