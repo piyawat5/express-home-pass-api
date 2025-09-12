@@ -499,3 +499,12 @@ export const googleLogin = async (req, res, next) => {
     next(createError(401, "การเข้าสู่ระบบด้วย Google ไม่สำเร็จ"));
   }
 };
+
+export const dog = () => {
+  try {
+    res.json({ message: "dog" });
+  } catch (error) {
+    console.error("Google OAuth Error:", error);
+    next(createError(401, "การเข้าสู่ระบบด้วย Google ไม่สำเร็จ"));
+  }
+};
