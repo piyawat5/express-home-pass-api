@@ -83,7 +83,7 @@ export const register = async (req, res, next) => {
       4.Insert into DB
       5.response
     */
-    const { email, firsName, lastName, password } = req.body;
+    const { email, firstName, lastName, password } = req.body;
 
     const user = await prisma.user.findFirst({
       where: {
@@ -99,7 +99,7 @@ export const register = async (req, res, next) => {
     const result = await prisma.user.create({
       data: {
         email,
-        firsName,
+        firstName,
         lastName,
         password: hashPassword,
       },
