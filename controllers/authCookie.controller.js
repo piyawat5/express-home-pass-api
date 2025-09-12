@@ -120,6 +120,7 @@ export const login = async (req, res, next) => {
   // console.log(req.socket?.remoteAddress);
   try {
     const { email, password } = req.body;
+
     const user = await prisma.user.findFirst({
       where: {
         email: email,
@@ -500,7 +501,7 @@ export const googleLogin = async (req, res, next) => {
   }
 };
 
-export const dog = () => {
+export const dog = (req, res, next) => {
   try {
     res.json({ message: "dog" });
   } catch (error) {

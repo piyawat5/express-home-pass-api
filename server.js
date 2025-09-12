@@ -13,7 +13,7 @@ import cookieParser from "cookie-parser";
 
 const app = express();
 const corsOptions = {
-  origin: ["http://localhost:5173", "http://localhost:3000"],
+  origin: ["http://localhost:5173", "https://homepass-web.family-sivarom.com"],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
@@ -22,6 +22,7 @@ const corsOptions = {
 
 // ใช้ CORS middleware ก่อน routes อื่นๆ
 app.use(cors(corsOptions));
+// app.options("*", cors(corsOptions));
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(cookieParser());
