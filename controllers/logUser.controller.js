@@ -1,5 +1,6 @@
 import { createUserLog } from "../utils/logUser.js";
 import prisma from "../config/prisma.js";
+import createError from "../utils/createError.js";
 
 export const preLogUserAction = (
   action,
