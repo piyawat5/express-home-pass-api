@@ -6,6 +6,7 @@ import crypto from "crypto";
 import nodemailer from "nodemailer";
 import { OAuth2Client } from "google-auth-library";
 import axios from "axios";
+import { google } from "googleapis";
 
 // ------------------- function -----------------------
 const oauth2Client = new google.auth.OAuth2(

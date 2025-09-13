@@ -34,7 +34,7 @@ router.post("/auth/verifyOTP", verifyOTPAndRegister);
 router.post("/auth/googleLogin", googleLogin);
 
 //  OAuth New
-router.get("/auth/google", startGoogleLogin);
-router.get("/auth/google/callback", googleCallback);
+// router.get("/auth/google", startGoogleLogin);
+// router.get("/auth/google/callback", googleCallback);
 
 export default router;
