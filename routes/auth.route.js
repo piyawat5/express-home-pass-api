@@ -19,7 +19,7 @@ import { preLogLogin } from "../controllers/logUser.controller.js";
 const router = express.Router();
 
 // ------------- auth --------------
-router.get("dog", dog);
+router.get("/dog", dog);
 router.post("/auth/register", validate(registerSchema), register);
 router.post("/auth/login", validate(loginSchema), preLogLogin, login);
 router.get("/auth/verify", authen);
