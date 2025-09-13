@@ -20,7 +20,7 @@ export const preLogUserAction = (
         });
 
         if (user === null) {
-          createError(401, "อีเมลหรือรหัสผู้ใช้งานไม่ถูกต้อง");
+          createError(409, "อีเมลหรือรหัสผู้ใช้งานไม่ถูกต้อง");
         }
 
         userId = user.id;
