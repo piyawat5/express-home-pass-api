@@ -10,6 +10,8 @@ import {
   googleLogin,
   resendOTP,
   dog,
+  startGoogleLogin,
+  googleCallback,
 } from "../controllers/authCookie.controller.js";
 import { registerSchema, loginSchema, validate } from "../utils/validator.js";
 import verifyToken from "../config/verify.js";
@@ -28,7 +30,11 @@ router.post("/auth/resendOTP", resendOTP);
 // TODO: validate
 router.post("/auth/verifyOTP", verifyOTPAndRegister);
 
-// OAuth routes
+// OAuth routes old มีปัญหาบนโทรศัพท์
 router.post("/auth/googleLogin", googleLogin);
+
+//  OAuth New
+router.get("/auth/google", startGoogleLogin);
+router.get("/auth/google/callback", googleCallback);
 
 export default router;

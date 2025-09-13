@@ -8,6 +8,12 @@ import { OAuth2Client } from "google-auth-library";
 import axios from "axios";
 
 // ------------------- function -----------------------
+const oauth2Client = new google.auth.OAuth2(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  "https://family-sivarom.com/auth/google/callback" // ต้องตรงกับ Google Console
+);
+
 const hashRt = (rt) => crypto.createHash("sha256").update(rt).digest("hex");
 
 const generateAccessToken = (user) => {
@@ -498,6 +504,98 @@ export const googleLogin = async (req, res, next) => {
   } catch (error) {
     console.error("Google OAuth Error:", error);
     next(createError(401, "การเข้าสู่ระบบด้วย Google ไม่สำเร็จ"));
+  }
+};
+
+// ---------------- OAuth แบบใหม่ redirect
+export const startGoogleLogin = (req, res) => {
+  const scopes = ["openid", "email", "profile"];
+
+  const url = oauth2Client.generateAuthUrl({
+    access_type: "offline",
+    prompt: "consent",
+    scope: scopes,
+  });
+
+  res.redirect(url);
+};
+
+export const googleCallback = async (req, res, next) => {
+  try {
+    const { code } = req.query;
+
+    // แลก code เป็น tokens
+    const { tokens } = await oauth2Client.getToken(code);
+    oauth2Client.setCredentials(tokens);
+
+    // ดึงข้อมูล user
+    const { data } = await axios.get(
+      "https://www.googleapis.com/oauth2/v3/userinfo",
+      { headers: { Authorization: `Bearer ${tokens.access_token}` } }
+    );
+
+    const { sub: googleId, email, name, picture } = data;
+
+    // หา/สร้าง user
+    let user = await prisma.user.findFirst({
+      where: { OR: [{ email }, { googleId }] },
+    });
+
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          email,
+          firstName: name,
+          googleId,
+          profileImage: picture,
+          authProvider: "GOOGLE",
+        },
+      });
+    } else if (!user.googleId) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          googleId,
+          profileImage: picture || user.profileImage,
+          authProvider: "GOOGLE",
+        },
+      });
+    }
+
+    // สร้าง tokens ของระบบคุณเอง
+    const userToken = {
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+
+    const accessToken = generateAccessToken(userToken);
+    const refreshToken = await generateRefreshToken(user);
+
+    // ส่ง cookie refresh token
+    res.cookie("jid", refreshToken, {
+      httpOnly: true,
+      secure: false, // true สำหรับ production
+      sameSite: "None",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7 * 1000,
+      // httpOnly: true,
+      // secure: process.env.NODE_ENV === "production",
+      // sameSite: "None",
+      // path: "/",
+      // maxAge: 60 * 60 * 24 * 7 * 1000,
+    });
+
+    // Redirect กลับไปหน้า dashboard frontend
+    res.redirect(
+      "https://homepass-web.family-sivarom.com/dashboard?token=" + accessToken
+    );
+  } catch (err) {
+    console.error("Google Callback Error:", err);
+    next(createError(401, "Google login ล้มเหลว"));
   }
 };
 
