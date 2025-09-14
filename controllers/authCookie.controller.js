@@ -159,9 +159,9 @@ export const login = async (req, res, next) => {
     // ตั้ง Cookie (HttpOnly + Secure)
     res.cookie("jid", refreshToken, {
       httpOnly: true,
-      secure: false, // true ถ้าใช้ https
-      sameSite: "Lax", // ป้องกัน CSRF กรณีที่ front และ back คนละโดเมน
-      // sameSite: "Strict", // ป้องกัน CSRF
+      secure: true, // ใช้ https
+      sameSite: "Lax", // หรือ "none" ถ้าต้องการ cross-site
+      domain: ".family-sivarom.com", // จุดนำหน้า = ใช้ได้ทั้ง domain และ subdomain
       path: "/",
       maxAge: 60 * 60 * 24 * 7 * 1000,
     });
