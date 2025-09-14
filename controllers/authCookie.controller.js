@@ -23,7 +23,7 @@ const generateAccessToken = (user) => {
       ...user,
     },
     process.env.JWT_SECRET_KEY,
-    { expiresIn: "1m" }
+    { expiresIn: "30m" }
   );
 };
 
@@ -489,8 +489,9 @@ export const googleLogin = async (req, res, next) => {
     // ตั้ง Cookie
     res.cookie("jid", refreshToken, {
       httpOnly: true,
-      secure: false, // true สำหรับ production
-      sameSite: "Lax",
+      secure: true, // ใช้ https
+      sameSite: "Lax", // หรือ "none" ถ้าต้องการ cross-site
+      domain: ".family-sivarom.com", // จุดนำหน้า = ใช้ได้ทั้ง domain และ subdomain
       path: "/",
       maxAge: 60 * 60 * 24 * 7 * 1000,
     });
@@ -579,15 +580,11 @@ export const googleCallback = async (req, res, next) => {
     // ส่ง cookie refresh token
     res.cookie("jid", refreshToken, {
       httpOnly: true,
-      secure: false, // true สำหรับ production
-      sameSite: "Lax",
+      secure: true, // ใช้ https
+      sameSite: "Lax", // หรือ "none" ถ้าต้องการ cross-site
+      domain: ".family-sivarom.com", // จุดนำหน้า = ใช้ได้ทั้ง domain และ subdomain
       path: "/",
       maxAge: 60 * 60 * 24 * 7 * 1000,
-      // httpOnly: true,
-      // secure: process.env.NODE_ENV === "production",
-      // sameSite: "None",
-      // path: "/",
-      // maxAge: 60 * 60 * 24 * 7 * 1000,
     });
 
     // Redirect กลับไปหน้า dashboard frontend
