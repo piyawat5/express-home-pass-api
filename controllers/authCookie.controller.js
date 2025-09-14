@@ -160,7 +160,7 @@ export const login = async (req, res, next) => {
     res.cookie("jid", refreshToken, {
       httpOnly: true,
       secure: false, // true ถ้าใช้ https
-      sameSite: "None", // ป้องกัน CSRF กรณีที่ front และ back คนละโดเมน
+      sameSite: "Lax", // ป้องกัน CSRF กรณีที่ front และ back คนละโดเมน
       // sameSite: "Strict", // ป้องกัน CSRF
       path: "/",
       maxAge: 60 * 60 * 24 * 7 * 1000,
@@ -490,7 +490,7 @@ export const googleLogin = async (req, res, next) => {
     res.cookie("jid", refreshToken, {
       httpOnly: true,
       secure: false, // true สำหรับ production
-      sameSite: "None",
+      sameSite: "Lax",
       path: "/",
       maxAge: 60 * 60 * 24 * 7 * 1000,
     });
@@ -580,7 +580,7 @@ export const googleCallback = async (req, res, next) => {
     res.cookie("jid", refreshToken, {
       httpOnly: true,
       secure: false, // true สำหรับ production
-      sameSite: "None",
+      sameSite: "Lax",
       path: "/",
       maxAge: 60 * 60 * 24 * 7 * 1000,
       // httpOnly: true,
