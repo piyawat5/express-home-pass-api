@@ -226,7 +226,7 @@ export const authen = (req, res, next) => {
   try {
     jwt.verify(token, process.env.JWT_SECRET_KEY, (err, decoded) => {
       if (err) {
-        createError(401, "token หมดอายุ");
+        return next(createError(401, "token หมดอายุ"));
       }
       res.json(decoded);
     });

@@ -22,7 +22,7 @@ const router = express.Router();
 router.get("/dog", dog);
 router.post("/auth/register", validate(registerSchema), register);
 router.post("/auth/login", validate(loginSchema), preLogLogin, login);
-router.get("/auth/verify", authen);
+router.post("/auth/verify", authen);
 router.post("/auth/refreshToken", refreshAccessToken);
 router.post("/auth/logout", logout);
 router.post("/auth/sendOTP", validate(registerSchema), sendOTP);
