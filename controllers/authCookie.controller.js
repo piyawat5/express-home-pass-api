@@ -41,6 +41,25 @@ const generateRefreshToken = async (user) => {
   return raw;
 };
 
+const generateAccessTokenSystem = (user, system) => {
+  let keyENV = "JWT_SECRET_KEY_";
+  keyENV += system;
+
+  const id = process.env[keyENV];
+
+  if (id) {
+    return jwt.sign(
+      {
+        ...user,
+      },
+      process.env[keyENV],
+      { expiresIn: "30m" }
+    );
+  } else {
+    return undefined;
+  }
+};
+
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -172,6 +191,22 @@ export const login = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+};
+
+export const systemAccess = async (req, res, next) => {
+  //TODO: ดัก 401 middleware
+  //TODO: Limit Login
+  const { system, user } = req.body;
+  const userToken = {
+    id: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    role: user.role,
+    createAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
+  const accessTokenSystem = generateAccessTokenSystem(userToken, system);
+  res.json({ accessTokenSystem });
 };
 
 // ------------------------ REFRESH ------------------------
