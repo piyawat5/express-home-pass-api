@@ -197,15 +197,20 @@ export const systemAccess = async (req, res, next) => {
   //TODO: ดัก 401 middleware
   //TODO: Limit Login
   try {
-    const { system, user } = req.body;
+    const { system, user, apiKey } = req.body;
 
-    if (!user || !system) {
-      return next(createError(400, error));
+    if (!user || !system || !apiKey) {
+      return next(createError(400, "กรุณาใส่ user system และ apiKey"));
     }
+
+    if (apiKey !== process.env.JWT_SECRET_KEY) {
+      return next(createError(400, "apiKey ไม่ถูกต้อง"));
+    }
+
     const userToken = {
       id: user.id,
       firstName: user.firstName,
-      lastName: user.lastName,
+      lastName: user?.lastName,
       role: user.role,
       createAt: user.createdAt,
       updatedAt: user.updatedAt,
