@@ -196,17 +196,25 @@ export const login = async (req, res, next) => {
 export const systemAccess = async (req, res, next) => {
   //TODO: ดัก 401 middleware
   //TODO: Limit Login
-  const { system, user } = req.body;
-  const userToken = {
-    id: user.id,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    role: user.role,
-    createAt: user.createdAt,
-    updatedAt: user.updatedAt,
-  };
-  const accessTokenSystem = generateAccessTokenSystem(userToken, system);
-  res.json({ accessTokenSystem });
+  try {
+    const { system, user } = req.body;
+
+    if (!user || !system) {
+      return next(createError(400, error));
+    }
+    const userToken = {
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      createAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+    const accessTokenSystem = generateAccessTokenSystem(userToken, system);
+    res.json({ accessTokenSystem });
+  } catch (error) {
+    next(createError(500, error));
+  }
 };
 
 // ------------------------ REFRESH ------------------------
