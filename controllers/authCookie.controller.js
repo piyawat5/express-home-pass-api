@@ -165,6 +165,7 @@ export const login = async (req, res, next) => {
 
     const userToken = {
       id: user.id,
+      email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
       role: user.role,
@@ -209,6 +210,7 @@ export const systemAccess = async (req, res, next) => {
 
     const userToken = {
       id: user.id,
+      email: user.email,
       firstName: user.firstName,
       lastName: user?.lastName,
       role: user.role,
@@ -241,6 +243,7 @@ export const refreshAccessToken = async (req, res, next) => {
 
   const userToken = {
     id: dbRt.user.id,
+    email: dbRt.user.email,
     firstName: dbRt.user.firstName,
     lastName: dbRt.user.lastName,
     role: dbRt.user.role,
@@ -524,6 +527,7 @@ export const googleLogin = async (req, res, next) => {
     // สร้าง tokens
     const userToken = {
       id: user.id,
+      email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
       role: user.role,
@@ -615,6 +619,7 @@ export const googleCallback = async (req, res, next) => {
     // สร้าง tokens ของระบบคุณเอง
     const userToken = {
       id: user.id,
+      email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
       role: user.role,
