@@ -53,7 +53,7 @@ const generateAccessTokenSystem = (user, system) => {
         ...user,
       },
       process.env[keyENV],
-      { expiresIn: "30m" }
+      { expiresIn: "60m" }
     );
   } else {
     return undefined;
