@@ -745,14 +745,15 @@ export const lineCallback = async (req, res) => {
 
     if (!user) {
       // ระบบอื่น (MA, APP, ...) ใช้ email ระบุตัว user จึงต้องมี email เสมอ
-      if (!email) return redirectLineResult(res, "no_email");
+      // ถ้า LINE ไม่คืน email (บัญชีไม่มีอีเมล / ไม่อนุญาต) → ใช้ email เทียมที่ไม่ซ้ำกันแทน (แบบเดียวกับ farmland)
+      const userEmail = email || `line_${lineId}@oauth.local`;
 
-      user = await prisma.user.findUnique({ where: { email } });
+      user = await prisma.user.findUnique({ where: { email: userEmail } });
 
       if (!user) {
         user = await prisma.user.create({
           data: {
-            email,
+            email: userEmail,
             firstName: name,
             lineId,
             profileImage: picture,
