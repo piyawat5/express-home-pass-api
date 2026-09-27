@@ -13,6 +13,8 @@ import {
   startGoogleLogin,
   googleCallback,
   systemAccess,
+  startLineLogin,
+  lineCallback,
 } from "../controllers/authCookie.controller.js";
 import { registerSchema, loginSchema, validate } from "../utils/validator.js";
 import verifyToken from "../config/verify.js";
@@ -39,5 +41,9 @@ router.post("/auth/googleLogin", googleLogin);
 //  OAuth New
 router.get("/auth/google", startGoogleLogin);
 router.get("/auth/google/callback", googleCallback);
+
+// LINE Login
+router.get("/auth/line", startLineLogin);
+router.get("/auth/line/callback", lineCallback);
 
 export default router;

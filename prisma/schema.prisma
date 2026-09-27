@@ -32,6 +32,7 @@ model User {
   // OAuth fields
   googleId      String?   @unique @map("google_id")
   facebookId    String?   @unique @map("facebook_id")
+  lineId        String?   @unique @map("line_id")
   profileImage  String?   @map("profile_image")
   authProvider  AuthProvider? @map("auth_provider")
 
@@ -131,4 +132,5 @@ enum AuthProvider {
   EMAIL
   GOOGLE
   FACEBOOK
+  LINE
 }

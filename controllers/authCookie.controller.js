@@ -7,6 +7,7 @@ import nodemailer from "nodemailer";
 import { OAuth2Client } from "google-auth-library";
 import axios from "axios";
 import { google } from "googleapis";
+import { createUserLog } from "../utils/logUser.js";
 
 // ------------------- function -----------------------
 const oauth2Client = new google.auth.OAuth2(
@@ -252,7 +253,8 @@ export const refreshAccessToken = async (req, res, next) => {
   };
 
   const accessToken = generateAccessToken(userToken);
-  res.json({ accessToken });
+  const { password: _, ...userWithoutPassword } = dbRt.user;
+  res.json({ accessToken, user: userWithoutPassword });
 };
 
 // ------------------------ LOGOUT ------------------------
@@ -647,6 +649,150 @@ export const googleCallback = async (req, res, next) => {
   } catch (err) {
     console.error("Google Callback Error:", err);
     next(createError(401, "Google login ล้มเหลว"));
+  }
+};
+
+// ---------------- LINE Login (OAuth 2.1 / OpenID Connect) ----------------
+// ต้องตรงกับ Callback URL ใน LINE Developers Console และอยู่ host เดียวกับ /auth/line (ไม่งั้น cookie state จะหาย)
+const LINE_REDIRECT_URI =
+  process.env.LINE_REDIRECT_URI ||
+  "https://www.family-sivarom.com/auth/line/callback";
+const FRONTEND_URL =
+  process.env.FRONTEND_URL || "https://homepass-web.family-sivarom.com";
+
+const LINE_STATE_COOKIE = "line_oauth";
+const lineStateCookieOptions = {
+  httpOnly: true,
+  secure: true,
+  sameSite: "Lax", // ห้ามใช้ Strict ไม่งั้น cookie จะไม่ถูกส่งมาตอน LINE redirect กลับ
+  path: "/auth/line",
+};
+
+// ส่งผู้ใช้กลับหน้าเว็บ พร้อม error code (ถ้ามี) — ไม่ส่ง token ทาง URL
+const redirectLineResult = (res, error) => {
+  const url = new URL("/auth/line/callback", FRONTEND_URL);
+  if (error) url.searchParams.set("error", error);
+  res.redirect(url.toString());
+};
+
+export const startLineLogin = (req, res) => {
+  if (!process.env.LINE_CHANNEL_ID || !process.env.LINE_CHANNEL_SECRET) {
+    console.error("LINE Login Error: ยังไม่ได้ตั้งค่า LINE_CHANNEL_ID / LINE_CHANNEL_SECRET");
+    return redirectLineResult(res, "failed");
+  }
+
+  // state กัน CSRF, nonce กัน replay ของ id_token
+  const state = crypto.randomBytes(16).toString("hex");
+  const nonce = crypto.randomBytes(16).toString("hex");
+
+  res.cookie(LINE_STATE_COOKIE, `${state}.${nonce}`, {
+    ...lineStateCookieOptions,
+    maxAge: 10 * 60 * 1000, // 10 นาที
+  });
+
+  const params = new URLSearchParams({
+    response_type: "code",
+    client_id: process.env.LINE_CHANNEL_ID,
+    redirect_uri: LINE_REDIRECT_URI,
+    state,
+    scope: "profile openid email",
+    nonce,
+  });
+
+  res.redirect(`https://access.line.me/oauth2/v2.1/authorize?${params}`);
+};
+
+export const lineCallback = async (req, res) => {
+  const { code, state, error } = req.query;
+  const [savedState, nonce] = (req.cookies[LINE_STATE_COOKIE] || "").split(".");
+  res.clearCookie(LINE_STATE_COOKIE, lineStateCookieOptions);
+
+  // ผู้ใช้กดยกเลิกที่หน้า LINE
+  if (error) return redirectLineResult(res, "cancelled");
+
+  if (!code || !savedState || state !== savedState) {
+    console.error("LINE Callback Error: state ไม่ตรงหรือหมดอายุ");
+    return redirectLineResult(res, "failed");
+  }
+
+  try {
+    // แลก code เป็น tokens
+    const { data: tokens } = await axios.post(
+      "https://api.line.me/oauth2/v2.1/token",
+      new URLSearchParams({
+        grant_type: "authorization_code",
+        code,
+        redirect_uri: LINE_REDIRECT_URI,
+        client_id: process.env.LINE_CHANNEL_ID,
+        client_secret: process.env.LINE_CHANNEL_SECRET,
+      })
+    );
+
+    // ให้ LINE ตรวจ id_token (ลายเซ็น, วันหมดอายุ, audience, nonce) แล้วคืนข้อมูล user
+    const { data: profile } = await axios.post(
+      "https://api.line.me/oauth2/v2.1/verify",
+      new URLSearchParams({
+        id_token: tokens.id_token,
+        client_id: process.env.LINE_CHANNEL_ID,
+        nonce,
+      })
+    );
+
+    const { sub: lineId, email, name, picture } = profile;
+
+    // หา/สร้าง user
+    let user = await prisma.user.findUnique({ where: { lineId } });
+
+    if (!user) {
+      // ระบบอื่น (MA, APP, ...) ใช้ email ระบุตัว user จึงต้องมี email เสมอ
+      if (!email) return redirectLineResult(res, "no_email");
+
+      user = await prisma.user.findUnique({ where: { email } });
+
+      if (!user) {
+        user = await prisma.user.create({
+          data: {
+            email,
+            firstName: name,
+            lineId,
+            profileImage: picture,
+            authProvider: "LINE",
+          },
+        });
+      } else if (!user.lineId) {
+        // มี email นี้อยู่แล้ว (สมัครด้วย email/Google) → ผูกกับ LINE
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            lineId,
+            profileImage: user.profileImage || picture,
+            authProvider: user.authProvider || "LINE",
+          },
+        });
+      }
+    }
+
+    const refreshToken = await generateRefreshToken(user);
+
+    // ส่ง cookie refresh token
+    res.cookie("jid", refreshToken, {
+      httpOnly: true,
+      secure: true, // ใช้ https
+      sameSite: "Lax", // หรือ "none" ถ้าต้องการ cross-site
+      domain: ".family-sivarom.com", // จุดนำหน้า = ใช้ได้ทั้ง domain และ subdomain
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7 * 1000,
+    });
+
+    await createUserLog(user.id, "LOGIN", "User logged in with LINE", req, {
+      provider: "LINE",
+    });
+
+    // หน้าเว็บจะเรียก /auth/refreshToken (ใช้ cookie jid) เพื่อรับ accessToken + user
+    redirectLineResult(res);
+  } catch (err) {
+    console.error("LINE Callback Error:", err.response?.data || err);
+    redirectLineResult(res, "failed");
   }
 };
 
